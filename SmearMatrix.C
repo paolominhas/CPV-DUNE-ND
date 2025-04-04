@@ -51,7 +51,7 @@ void SmearMatrix()
   const std::string NDGAR_RHC = "/scratch/cpatrick/DuneSchool/CAFs/NDGAr/CAF_RHC_9**.root"; //ND-GAr RHC
   const std::string NDLAR_FHC = "/scratch/cpatrick/DuneSchool/CAFs/NDLAr/CAF_FHC_9**.root"; //ND-LAr FHC
   const std::string NDLAR_RHC = "/scratch/cpatrick/DuneSchool/CAFs/NDLAr/CAF_RHC_9**.root"; //ND-LAr RHC
-  SpectrumLoader loader(NDGAR_FHC);
+  SpectrumLoader loader(NDLAR_FHC);
   const Binning binsEnergy = Binning::Simple(80, 0, 10);
   const Binning binsTrue = Binning::Simple(80, 0, 10);
   const Binning binsReco = Binning::Simple(80, 0, 10);
@@ -93,6 +93,18 @@ void SmearMatrix()
       return sr->LepPDG == PDG_MU && sr->nP == 1 && totOthers == 0 ;
    });
 
+   const Cut kMECOnly([](const caf::SRProxy* sr) {
+    return sr->mode == MODE_MEC;
+  });
+
+   const Cut kDISOnly([](const caf::SRProxy* sr) {
+    return sr->mode == MODE_DIS;
+   });
+
+   const Cut kRESOnly([](const caf::SRProxy* sr) {
+    return sr->mode == MODE_RES;
+   });
+
    const Var kTrueEnergy([](const caf::SRProxy* sr) { return sr->Ev; }); // True neutrino energy
    const Var kRecoEnergy([](const caf::SRProxy* sr) { return sr->Ev_reco; }); // Reco neutrino energy
 
@@ -101,16 +113,16 @@ void SmearMatrix()
 
    const Cut kValidReco([](const caf::SRProxy* sr) { return sr->Ev_reco > 0; });
 
-   Spectrum sSmearing(loader, axTrue, axReco, kValidReco);
+   Spectrum sSmearing(loader, axTrue, axReco, kValidReco && kMECOnly);
 
    loader.Go();  // Process the data
 
    TH2* hSmearing = sSmearing.ToTH2(1e20); // Normalize to POT
    TCanvas *c2 = new TCanvas("c2", "Smearing Matrix", 1000, 750);
-   hSmearing->SetTitle("Smearing Matrix: True vs. Reconstructed Neutrino Energy - NDGAr FHC");
-   gStyle->SetPalette(kWaterMelon); 
+   hSmearing->SetTitle("Smearing Matrix: True vs. Reconstructed Neutrino Energy MEC- NDLAr FHC");
+   gStyle->SetPalette(kCubehelix); 
    hSmearing->Draw("COLZ"); // Plot as color map
-   c2->SaveAs("SmearingMatrixGF.png"); 
+   c2->SaveAs("SmearingMatrixMECLF.png"); 
 
    //TH2D *hTrueReco = sTrueReco.ToTH2(1e20); // Convert Spectrum2D to TH2D histogram
 }
